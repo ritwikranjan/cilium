@@ -11,6 +11,13 @@ import (
 	"github.com/cilium/cilium/pkg/lock"
 )
 
+type RingReaderInterface interface {
+	Previous() (*v1.Event, error)
+	Next() (*v1.Event, error)
+	NextFollow(ctx context.Context) *v1.Event
+	Close() error
+}
+
 // RingReader is a reader for a Ring container.
 type RingReader struct {
 	ring          *Ring
@@ -24,11 +31,11 @@ type RingReader struct {
 
 // NewRingReader creates a new RingReader that starts reading the ring at the
 // position given by start.
-func NewRingReader(ring *Ring, start uint64) *RingReader {
+func NewRingReader(ring *Ring, start uint64) RingReaderInterface {
 	return newRingReader(ring, start, 1000)
 }
 
-func newRingReader(ring *Ring, start uint64, bufferLen int) *RingReader {
+func newRingReader(ring *Ring, start uint64, bufferLen int) RingReaderInterface {
 	return &RingReader{
 		ring:          ring,
 		idx:           start,

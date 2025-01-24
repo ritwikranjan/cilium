@@ -530,7 +530,7 @@ var (
 // eventsReader reads flows using a RingReader. It applies the GetFlows request
 // criteria (blacklist, whitelist, follow, ...) before returning events.
 type eventsReader struct {
-	ringReader           *container.RingReader
+	ringReader           container.RingReaderInterface
 	whitelist, blacklist filters.FilterFuncs
 	maxEvents            uint64
 	follow, timeRange    bool
@@ -541,7 +541,7 @@ type eventsReader struct {
 // newEventsReader creates a new eventsReader that uses the given RingReader to
 // read through the ring buffer. Only events that match the request criteria
 // are returned.
-func newEventsReader(r *container.RingReader, req genericRequest, log logrus.FieldLogger, whitelist, blacklist filters.FilterFuncs) (*eventsReader, error) {
+func newEventsReader(r container.RingReaderInterface, req genericRequest, log logrus.FieldLogger, whitelist, blacklist filters.FilterFuncs) (*eventsReader, error) {
 	log.WithFields(logrus.Fields{
 		"req":       req,
 		"whitelist": whitelist,
@@ -659,7 +659,7 @@ func validateRequest(req genericRequest) error {
 
 // newRingReader creates a new RingReader that starts at the correct ring
 // offset to match the flow request.
-func newRingReader(ring *container.Ring, req genericRequest, whitelist, blacklist filters.FilterFuncs) (*container.RingReader, error) {
+func newRingReader(ring *container.Ring, req genericRequest, whitelist, blacklist filters.FilterFuncs) (container.RingReaderInterface, error) {
 	since := req.GetSince()
 
 	// since takes precedence over Number (--first and --last)
