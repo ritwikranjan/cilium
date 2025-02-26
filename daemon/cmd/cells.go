@@ -37,8 +37,10 @@ import (
 	ipamcell "github.com/cilium/cilium/pkg/ipam/cell"
 	"github.com/cilium/cilium/pkg/k8s"
 	k8sClient "github.com/cilium/cilium/pkg/k8s/client"
+	"github.com/cilium/cilium/pkg/k8s/synced"
 	k8sSynced "github.com/cilium/cilium/pkg/k8s/synced"
 	"github.com/cilium/cilium/pkg/k8s/watchers"
+	"github.com/cilium/cilium/pkg/k8s/watchers/resources"
 	"github.com/cilium/cilium/pkg/kvstore/store"
 	"github.com/cilium/cilium/pkg/l2announcer"
 	"github.com/cilium/cilium/pkg/logging/logfields"
@@ -262,6 +264,9 @@ var (
 		// and clustermesh.
 		dial.ServiceResolverCell,
 
+		// Provide resource groups to watch.
+		cell.Provide(func() watchers.ResourceGroupFunc { return allResourceGroups }),
+
 		// K8s Watcher provides the core k8s watchers
 		watchers.Cell,
 
@@ -302,4 +307,43 @@ func configureAPIServer(cfg *option.DaemonConfig, s *server.Server, db *statedb.
 	mux.Handle("/", s.GetHandler())
 	mux.Handle("/statedb/", http.StripPrefix("/statedb", db.HTTPHandler()))
 	s.SetHandler(mux)
+}
+
+var pprofConfig = pprof.Config{
+	Pprof:        false,
+	PprofAddress: option.PprofAddressAgent,
+	PprofPort:    option.PprofPortAgent,
+}
+
+// resourceGroups are all of the core Kubernetes and Cilium resource groups
+// which the Cilium agent watches to implement CNI functionality.
+func allResourceGroups(cfg watchers.WatcherConfiguration) (resourceGroups, waitForCachesOnly []string) {
+	k8sGroups := []string{
+		// To perform the service translation and have the BPF LB datapath
+		// with the right service -> backend (k8s endpoints) translation.
+		resources.K8sAPIGroupServiceV1Core,
+
+		// Namespaces can contain labels which are essential for
+		// endpoints being restored to have the right identity.
+		resources.K8sAPIGroupNamespaceV1Core,
+		// Pods can contain labels which are essential for endpoints
+		// being restored to have the right identity.
+		resources.K8sAPIGroupPodV1Core,
+		// To perform the service translation and have the BPF LB datapath
+		// with the right service -> backend (k8s endpoints) translation.
+		resources.K8sAPIGroupEndpointSliceOrEndpoint,
+	}
+
+	if cfg.K8sNetworkPolicyEnabled() {
+		// When the flag is set,
+		// We need all network policies in place before restoring to
+		// make sure we are enforcing the correct policies for each
+		// endpoint before restarting.
+		waitForCachesOnly = append(waitForCachesOnly, resources.K8sAPIGroupNetworkingV1Core)
+	}
+
+	ciliumGroups, waitOnlyList := watchers.GetGroupsForCiliumResources(synced.AgentCRDResourceNames())
+	waitForCachesOnly = append(waitForCachesOnly, waitOnlyList...)
+
+	return append(k8sGroups, ciliumGroups...), waitForCachesOnly
 }
