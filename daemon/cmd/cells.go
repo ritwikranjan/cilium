@@ -38,6 +38,7 @@ import (
 	"github.com/cilium/cilium/pkg/fqdn/namemanager"
 	"github.com/cilium/cilium/pkg/gops"
 	hubble "github.com/cilium/cilium/pkg/hubble/cell"
+	parser "github.com/cilium/cilium/pkg/hubble/parser/cell"
 	identity "github.com/cilium/cilium/pkg/identity/cache/cell"
 	"github.com/cilium/cilium/pkg/identity/identitymanager"
 	ipamcell "github.com/cilium/cilium/pkg/ipam/cell"
@@ -319,6 +320,9 @@ var (
 
 		// Allows agent to monitor the configuration drift and publish drift metric
 		driftchecker.Cell,
+
+		// payloadParser for setting up hubble integration
+		parser.Cell,
 
 		// Runs the Hubble servers and Hubble metrics.
 		hubble.Cell,

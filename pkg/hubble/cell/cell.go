@@ -16,6 +16,7 @@ import (
 	"github.com/cilium/cilium/pkg/endpointmanager"
 	exportercell "github.com/cilium/cilium/pkg/hubble/exporter/cell"
 	"github.com/cilium/cilium/pkg/hubble/observer/observeroption"
+	"github.com/cilium/cilium/pkg/hubble/parser"
 	identitycell "github.com/cilium/cilium/pkg/identity/cache/cell"
 	"github.com/cilium/cilium/pkg/ipcache"
 	k8sClient "github.com/cilium/cilium/pkg/k8s/client"
@@ -65,6 +66,8 @@ type hubbleParams struct {
 	ObserverOptions  []observeroption.Option                `group:"hubble-observer-options"`
 	ExporterBuilders []*exportercell.FlowLogExporterBuilder `group:"hubble-exporter-builders"`
 
+	PayloadParser *parser.Decoder
+
 	// NOTE: we still need DaemonConfig for the shared EnableRecorder flag.
 	AgentConfig *option.DaemonConfig
 	Config      config
@@ -90,6 +93,7 @@ func newHubbleIntegration(params hubbleParams) (HubbleIntegration, error) {
 		params.Recorder,
 		params.ObserverOptions,
 		params.ExporterBuilders,
+		params.PayloadParser,
 		params.AgentConfig,
 		params.Config,
 		params.Logger,
