@@ -44,6 +44,11 @@ var Cell = cell.Module(
 
 	// Parser for Hubble flows
 	parsercell.Cell,
+
+	// hubblePeerService only require a notifier to be provided
+	cell.Provide(func(nm nodeManager.NodeManager) nodeManager.Notifier {
+		return nm
+	}),
 )
 
 var Core = cell.Group(
@@ -65,7 +70,7 @@ type hubbleParams struct {
 	CGroupManager     manager.CGroupManager
 	Clientset         k8sClient.Clientset
 	K8sWatcher        *watchers.K8sWatcher
-	NodeManager       nodeManager.NodeManager
+	NodeNotifier      nodeManager.Notifier
 	NodeLocalStore    *node.LocalNodeStore
 	MonitorAgent      monitorAgent.Agent
 	Recorder          *recorder.Recorder
@@ -95,7 +100,7 @@ func newHubbleIntegration(params hubbleParams) (HubbleIntegration, error) {
 		params.CGroupManager,
 		params.Clientset,
 		params.K8sWatcher,
-		params.NodeManager,
+		params.NodeNotifier,
 		params.NodeLocalStore,
 		params.MonitorAgent,
 		params.Recorder,
