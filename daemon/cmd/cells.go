@@ -196,6 +196,11 @@ var (
 		// NodeManager maintains a collection of other nodes in the cluster.
 		nodeManager.Cell,
 
+		// hubblePeerService only require a notifier to be provided
+		cell.Provide(func(nm nodeManager.NodeManager) nodeManager.Notifier {
+			return nm
+		}),
+
 		// Certificate manager provides an API for retrieving secrets and certificate in the form of TLS contexts.
 		certificatemanager.Cell,
 

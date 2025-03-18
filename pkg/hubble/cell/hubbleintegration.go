@@ -77,7 +77,7 @@ type hubbleIntegration struct {
 	cgroupManager     manager.CGroupManager
 	clientset         k8sClient.Clientset
 	k8sWatcher        *watchers.K8sWatcher
-	nodeManager       nodeManager.NodeManager
+	nodeNotifier      nodeManager.Notifier
 	nodeLocalStore    *node.LocalNodeStore
 	monitorAgent      monitorAgent.Agent
 	recorder          *recorder.Recorder
@@ -100,7 +100,7 @@ func new(
 	cgroupManager manager.CGroupManager,
 	clientset k8sClient.Clientset,
 	k8sWatcher *watchers.K8sWatcher,
-	nodeManager nodeManager.NodeManager,
+	nodeNotifier nodeManager.Notifier,
 	nodeLocalStore *node.LocalNodeStore,
 	monitorAgent monitorAgent.Agent,
 	recorder *recorder.Recorder,
@@ -133,7 +133,7 @@ func new(
 		cgroupManager:     cgroupManager,
 		clientset:         clientset,
 		k8sWatcher:        k8sWatcher,
-		nodeManager:       nodeManager,
+		nodeNotifier:      nodeNotifier,
 		nodeLocalStore:    nodeLocalStore,
 		monitorAgent:      monitorAgent,
 		recorder:          recorder,
@@ -430,7 +430,7 @@ func (h *hubbleIntegration) launch(ctx context.Context) (*observer.LocalObserver
 			peerServiceOptions = append(peerServiceOptions, serviceoption.WithHubblePort(port))
 		}
 	}
-	peerSvc := peer.NewService(h.nodeManager, peerServiceOptions...)
+	peerSvc := peer.NewService(h.nodeNotifier, peerServiceOptions...)
 	localSrvOpts = append(localSrvOpts,
 		serveroption.WithUnixSocketListener(logging.DefaultSlogLogger, sockPath),
 		serveroption.WithHealthService(),
